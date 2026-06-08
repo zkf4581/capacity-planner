@@ -538,7 +538,7 @@
   /* ========== 通用样式 ========== */
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
-  html { background-color: var(--bg); }
+  html { background-color: var(--bg); overflow-x: hidden; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
     font-size: 18px;
@@ -550,6 +550,7 @@
     min-height: 100vh;
     line-height: 1.5;
     transition: background-color .3s ease, color .3s ease;
+    overflow-x: hidden;
   }
   header.top {
     background: var(--header-bg);
@@ -557,19 +558,23 @@
     padding: 18px 28px;
     border-bottom: 4px solid var(--header-border);
     box-shadow: var(--header-shadow);
+    max-width: 100%;
   }
   .header-top-row {
     display: flex; align-items: center; justify-content: space-between;
     gap: 16px; margin-bottom: 12px; flex-wrap: wrap;
+    min-width: 0;
   }
   header.top h1 { margin: 0; font-size: 26px; letter-spacing: 1px; color: var(--header-text); }
   .header-actions {
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    min-width: 0; max-width: 100%;
   }
   .header-actions .btn.small.ghost { font-size: 14px; padding: 6px 12px; }
   .theme-switch {
     display: flex; align-items: center; gap: 8px;
     font-size: 14px; color: var(--header-label);
+    min-width: 0;
   }
   .theme-switch select {
     font-size: 15px; font-weight: 600;
@@ -577,6 +582,7 @@
     background: var(--input-bg); color: var(--input-text);
     border: 1.5px solid var(--input-border);
     cursor: pointer; min-width: 140px;
+    max-width: 100%;
   }
   .theme-switch select:focus { outline: none; border-color: var(--input-focus); }
 
@@ -637,6 +643,13 @@
     .layout { grid-template-columns: 1fr; }
     .team-grid { grid-template-columns: repeat(2, 1fr); }
     .header-top-row { gap: 10px; }
+  }
+  @media (max-width: 640px) {
+    header.top { padding: 14px 16px; }
+    .layout { padding: 16px; }
+    .header-actions { width: 100%; justify-content: flex-start; }
+    .theme-switch { flex: 1 0 100%; justify-content: flex-end; margin-top: 4px; }
+    .theme-switch select { min-width: 0; flex: 1 1 auto; max-width: 220px; }
   }
 
   .panel {
