@@ -1010,6 +1010,15 @@
   }
   .modal .field select:focus { outline: none; border-color: var(--input-focus); }
   .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+  .confirm-body {
+    white-space: pre-line;
+    color: var(--modal-text);
+    line-height: 1.55;
+    font-size: 15px;
+  }
+  .confirm-modal {
+    width: min(520px, 92vw);
+  }
 
   /* 排序 + 搜索 控件行 */
   .panel-controls {
@@ -1716,6 +1725,7 @@
       <button class="btn small ghost" id="exportBtn" title="导出当前数据为 JSON 文件">📤 导出</button>
       <button class="btn small ghost" id="importBtn" title="从 JSON 文件导入数据">📥 导入</button>
       <input type="file" id="importFile" accept=".json,application/json" hidden>
+      <button class="btn small ghost" id="copySnapshotBtn" title="复制当前排期 JSON 快照，方便发给同事">🔗 快照</button>
       <button class="btn small ghost" id="resetBtn" title="清空存档并恢复内置默认数据">🗑 重置</button>
       <button class="btn small ghost" id="backupBtn" title="手动生成一份本地备份，便于误操作后恢复">💾 备份</button>
       <button class="btn small ghost" id="restoreBackupBtn" title="恢复最近一次本地备份">↩ 恢复</button>
@@ -1874,6 +1884,17 @@
     <div class="modal-actions">
       <button class="btn ghost" id="m_cancel">取消</button>
       <button class="btn" id="m_save">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg confirm-bg" id="confirmModal">
+  <div class="modal confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h3 id="confirmTitle">确认操作</h3>
+    <div class="confirm-body" id="confirmBody"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="confirmCancel">取消</button>
+      <button class="btn" id="confirmOk">确认</button>
     </div>
   </div>
 </div>
@@ -2723,16 +2744,21 @@
       showToast("当前没有可恢复的本地备份。");
       return;
     }
-    if (!confirm(`确认恢复最近备份吗？\n备份时间：${formatDateTime(new Date(latest.createdAt))}\n原因：${latest.reason || "未标注"}`)) return;
-    try {
-      makeBackup("恢复备份前自动备份");
-      applyData(latest.data);
-      renderAll();
-      save();
-      showToast("已恢复最近备份。");
-    } catch (e) {
-      alert("恢复失败：" + (e && e.message ? e.message : "未知错误"));
-    }
+    showConfirm(
+      "恢复最近备份",
+      `备份时间：${formatDateTime(new Date(latest.createdAt))}\n原因：${latest.reason || "未标注"}\n\n恢复前会再自动备份当前数据。`,
+      () => {
+        try {
+          makeBackup("恢复备份前自动备份");
+          applyData(latest.data);
+          renderAll();
+          save();
+          showToast("已恢复最近备份。");
+        } catch (e) {
+          alert("恢复失败：" + (e && e.message ? e.message : "未知错误"));
+        }
+      }
+    );
   }
 
   function save() {
@@ -2877,6 +2903,32 @@
     }
   }
 
+  function copySnapshot() {
+    const text = JSON.stringify(serialize(), null, 2);
+    const done = () => showToast("已复制当前排期 JSON 快照，可以直接发给同事导入。");
+    const fail = () => {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "readonly");
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        done();
+      } catch (_) {
+        showToast("复制失败，请使用导出 JSON。");
+      }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(fail);
+    } else {
+      fail();
+    }
+  }
+
   function importDataFromFile(file) {
     if (!file) return;
     const reader = new FileReader();
@@ -2885,14 +2937,19 @@
         const obj = JSON.parse(String(reader.result || ""));
         const count = Array.isArray(obj.cards) ? obj.cards.length : 0;
         const pc = obj.periodsCount || DEFAULT_PERIODS;
-        if (!confirm(`确认导入这份排期吗？\n需求数：${count}\n期数：${pc}\n导入前会自动备份当前数据。`)) return;
-        makeBackup("导入前自动备份");
-        applyData(obj);
-        renderAll();
-        save();
-        showToast(`已导入 ${count} 个需求，导入前数据已备份。`, [
-          { label: "恢复备份", onClick: restoreLatestBackup }
-        ]);
+        showConfirm(
+          "导入排期数据",
+          `需求数：${count}\n期数：${pc}\n\n导入前会自动备份当前数据。`,
+          () => {
+            makeBackup("导入前自动备份");
+            applyData(obj);
+            renderAll();
+            save();
+            showToast(`已导入 ${count} 个需求，导入前数据已备份。`, [
+              { label: "恢复备份", onClick: restoreLatestBackup }
+            ]);
+          }
+        );
       } catch (e) {
         alert("导入失败：文件不是有效的 JSON 或数据结构异常。\n" + (e && e.message ? e.message : ""));
       }
@@ -2902,28 +2959,33 @@
   }
 
   function resetAll() {
-    if (!confirm("确认要清空所有存档并恢复内置默认数据吗？\n重置前会自动备份当前数据，可从提示里恢复。")) return;
-    makeBackup("重置前自动备份");
-    try { localStorage.removeItem(LS_KEY); } catch (_) {}
-    viewState.pool.sort = "pri"; viewState.pool.q = "";
-    poolSortEl.value = "pri";
-    poolSearchEl.value = "";
-    periodsCount = DEFAULT_PERIODS;
-    currentPeriod = 1;
-    initDates();
-    $("r_pm").value = 2; $("r_be").value = 2; $("r_fe").value = 1;
-    $("r_fs").value = 1; $("r_qa").value = 1; $("r_hours").value = 8;
-    $("r_holidayOn").checked = true;
-    $("r_customHolidays").value = "";
-    $("r_buffer").value = 20;
-    $("r_rampOn").checked = false;
-    $("r_newcomers").value = 0;
-    loadDefaultCards();
-    renderAll();
-    save();
-    showToast("已恢复内置默认数据，重置前数据已备份。", [
-      { label: "恢复备份", onClick: restoreLatestBackup }
-    ]);
+    showConfirm(
+      "重置为内置默认数据",
+      "这会清空当前页面里的需求、排期和设置。\n\n重置前会自动备份当前数据，可从提示里恢复。",
+      () => {
+        makeBackup("重置前自动备份");
+        try { localStorage.removeItem(LS_KEY); } catch (_) {}
+        viewState.pool.sort = "pri"; viewState.pool.q = "";
+        poolSortEl.value = "pri";
+        poolSearchEl.value = "";
+        periodsCount = DEFAULT_PERIODS;
+        currentPeriod = 1;
+        initDates();
+        $("r_pm").value = 2; $("r_be").value = 2; $("r_fe").value = 1;
+        $("r_fs").value = 1; $("r_qa").value = 1; $("r_hours").value = 8;
+        $("r_holidayOn").checked = true;
+        $("r_customHolidays").value = "";
+        $("r_buffer").value = 20;
+        $("r_rampOn").checked = false;
+        $("r_newcomers").value = 0;
+        loadDefaultCards();
+        renderAll();
+        save();
+        showToast("已恢复内置默认数据，重置前数据已备份。", [
+          { label: "恢复备份", onClick: restoreLatestBackup }
+        ]);
+      }
+    );
   }
 
   function moveCard(id, zone) {
@@ -2968,6 +3030,31 @@
 
   let editingId = null;
   const modal = $("modal");
+  const confirmModal = $("confirmModal");
+  let pendingConfirm = null;
+
+  function showConfirm(title, body, onConfirm) {
+    if (!confirmModal) return;
+    $("confirmTitle").textContent = title || "确认操作";
+    $("confirmBody").textContent = body || "";
+    pendingConfirm = typeof onConfirm === "function" ? onConfirm : null;
+    confirmModal.classList.add("show");
+    setTimeout(() => $("confirmCancel").focus(), 30);
+  }
+
+  function closeConfirm() {
+    if (!confirmModal) return;
+    confirmModal.classList.remove("show");
+    pendingConfirm = null;
+  }
+
+  $("confirmCancel").addEventListener("click", closeConfirm);
+  $("confirmOk").addEventListener("click", () => {
+    const fn = pendingConfirm;
+    closeConfirm();
+    if (fn) fn();
+  });
+  confirmModal.addEventListener("click", (e) => { if (e.target === confirmModal) closeConfirm(); });
 
   // 渲染弹窗里的「前置依赖」复选列表
   function renderDepsPicker(editingCard) {
@@ -3049,15 +3136,21 @@
   modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && modal.classList.contains("show")) closeModal();
+    if (e.key === "Escape" && confirmModal.classList.contains("show")) closeConfirm();
   });
 
   function moveAllFromPeriod(periodIdx) {
     const zone = periodZone(periodIdx);
     const inP = cards.filter(c => c.zone === zone);
     if (inP.length === 0) return;
-    if (!confirm(`确定把第${periodIdx}期的 ${inP.length} 个需求全部移回需求池吗？`)) return;
-    inP.forEach(c => { c.zone = "pool"; });
-    renderAll(); save();
+    showConfirm(
+      `移回第${periodIdx}期需求`,
+      `确定把第${periodIdx}期的 ${inP.length} 个需求全部移回需求池吗？`,
+      () => {
+        inP.forEach(c => { c.zone = "pool"; });
+        renderAll(); save();
+      }
+    );
   }
 
   function setCurrentPeriod(i) {
@@ -3207,9 +3300,14 @@
   $("backAllBtn").addEventListener("click", () => {
     const allocated = cards.filter(c => isPeriodZone(c.zone));
     if (allocated.length === 0) return;
-    if (!confirm(`确定把全部 ${allocated.length} 个已分配需求移回需求池吗？`)) return;
-    allocated.forEach(c => { c.zone = "pool"; });
-    renderAll(); save();
+    showConfirm(
+      "全部移回需求池",
+      `确定把全部 ${allocated.length} 个已分配需求移回需求池吗？`,
+      () => {
+        allocated.forEach(c => { c.zone = "pool"; });
+        renderAll(); save();
+      }
+    );
   });
 
   // 团队 / 设置输入 → 整体重算
@@ -3262,6 +3360,7 @@
 
   // 顶部工具栏：导入 / 导出 / 重置
   $("exportBtn").addEventListener("click", exportData);
+  $("copySnapshotBtn").addEventListener("click", copySnapshot);
   $("importBtn").addEventListener("click", () => $("importFile").click());
   $("importFile").addEventListener("change", (e) => {
     const f = e.target.files && e.target.files[0];

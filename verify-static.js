@@ -11,6 +11,8 @@ const checks = [
   ["顶部显示保存状态", /id="saveStatus"/],
   ["支持本地备份", /LS_BACKUPS_KEY/],
   ["支持恢复最近备份", /id="restoreBackupBtn"/],
+  ["支持复制协作快照", /id="copySnapshotBtn"/],
+  ["危险操作使用页面确认弹窗", /id="confirmModal"/],
   ["删除后可撤销", /已撤销删除/],
   ["卡片支持指定期下拉", /class="card-zone-select"/],
   ["卡片详情默认折叠", /class="card-more"/],
