@@ -1,0 +1,11 @@
+services:
+  capacity-planner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: capacity-planner:latest
+    container_name: capacity-planner
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+

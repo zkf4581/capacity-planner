@@ -1,0 +1,4 @@
+# 只把 index.html 打进镜像，其它一律忽略
+*
+!index.html
+
