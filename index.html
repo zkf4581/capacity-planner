@@ -536,7 +536,7 @@
   }
 
   /* ========== 通用样式 ========== */
-  * { box-sizing: border-box; }
+  *, *::before, *::after { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   html { background-color: var(--bg); overflow-x: hidden; }
   body {
@@ -568,13 +568,17 @@
   header.top h1 { margin: 0; font-size: 26px; letter-spacing: 1px; color: var(--header-text); }
   .header-actions {
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    flex: 1 1 720px;
+    justify-content: flex-end;
     min-width: 0; max-width: 100%;
   }
   .header-actions .btn.small.ghost { font-size: 14px; padding: 6px 12px; }
   .theme-switch {
     display: flex; align-items: center; gap: 8px;
     font-size: 14px; color: var(--header-label);
-    flex-shrink: 0;
+    flex: 0 1 210px;
+    min-width: 180px;
+    max-width: 100%;
   }
   .theme-switch label {
     white-space: nowrap;
@@ -584,7 +588,10 @@
     padding: 7px 12px; border-radius: var(--radius-pill);
     background: var(--input-bg); color: var(--input-text);
     border: 1.5px solid var(--input-border);
-    cursor: pointer; min-width: 135px;
+    cursor: pointer;
+    flex: 1 1 150px;
+    min-width: 150px;
+    max-width: 100%;
   }
   .theme-switch select:focus { outline: none; border-color: var(--input-focus); }
 
@@ -651,10 +658,11 @@
       flex: 1 0 100%;
       justify-content: flex-end;
       margin-top: 4px;
+      min-width: 0;
     }
     .theme-switch select {
-      min-width: 0;
-      flex: 0 1 auto;
+      min-width: 150px;
+      flex: 0 0 174px;
       max-width: 240px;
     }
   }
@@ -662,6 +670,11 @@
     header.top { padding: 14px 16px; }
     .layout { padding: 16px; }
     .header-actions { width: 100%; justify-content: flex-start; }
+    .theme-switch {
+      flex: 1 1 100%;
+      justify-content: flex-start;
+      min-width: 0;
+    }
     .theme-switch select { max-width: 220px; flex: 1 1 auto; }
   }
 
