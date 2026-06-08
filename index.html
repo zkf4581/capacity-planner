@@ -646,12 +646,23 @@
     .team-grid { grid-template-columns: repeat(2, 1fr); }
     .header-top-row { gap: 10px; }
   }
+  @media (max-width: 960px) {
+    .theme-switch {
+      flex: 1 0 100%;
+      justify-content: flex-end;
+      margin-top: 4px;
+    }
+    .theme-switch select {
+      min-width: 0;
+      flex: 0 1 auto;
+      max-width: 240px;
+    }
+  }
   @media (max-width: 640px) {
     header.top { padding: 14px 16px; }
     .layout { padding: 16px; }
     .header-actions { width: 100%; justify-content: flex-start; }
-    .theme-switch { flex: 1 0 100%; justify-content: flex-end; margin-top: 4px; }
-    .theme-switch select { min-width: 0; flex: 1 1 auto; max-width: 220px; }
+    .theme-switch select { max-width: 220px; flex: 1 1 auto; }
   }
 
   .panel {
