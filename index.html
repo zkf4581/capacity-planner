@@ -726,6 +726,69 @@
   }
   .btn.ghost:hover { background: var(--accent-soft); }
   .btn.small { font-size: 13px; padding: 4px 10px; }
+  .btn.linkish {
+    background: transparent;
+    border-color: transparent;
+    color: var(--accent);
+    padding-inline: 6px;
+  }
+  .btn.linkish:hover {
+    background: var(--accent-soft);
+    border-color: var(--btn-ghost-border);
+  }
+  .save-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 24px;
+    padding: 3px 8px;
+    border-radius: var(--radius-pill);
+    background: var(--accent-soft);
+    color: var(--header-text);
+    border: 1px solid var(--btn-ghost-border);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .save-status.is-warning {
+    background: var(--warning-bg);
+    color: var(--warning-text);
+    border-color: var(--warning-border);
+  }
+  .toast-stack {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 140;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(420px, calc(100vw - 32px));
+    pointer-events: none;
+  }
+  .toast {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    background: var(--modal-bg);
+    color: var(--modal-text);
+    border: var(--panel-border);
+    box-shadow: var(--modal-shadow);
+    backdrop-filter: var(--panel-backdrop);
+    -webkit-backdrop-filter: var(--panel-backdrop);
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .toast .toast-msg { line-height: 1.45; }
+  .toast .toast-actions {
+    display: inline-flex;
+    gap: 8px;
+    white-space: nowrap;
+  }
 
   .card-list { display: flex; flex-direction: column; gap: 12px; min-height: 400px; flex: 1; }
 
@@ -782,6 +845,42 @@
   }
   .card-sum { color: var(--accent); font-weight: 700; }
   .card-actions { display: flex; gap: 6px; }
+  .card-more {
+    margin-top: 8px;
+  }
+  .card-more > summary {
+    cursor: pointer;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 700;
+    user-select: none;
+    width: max-content;
+  }
+  .card-more > summary::-webkit-details-marker { display: none; }
+  .card-more > summary::before {
+    content: "▶";
+    display: inline-block;
+    margin-right: 5px;
+    font-size: 10px;
+    transition: transform .15s ease;
+  }
+  .card-more[open] > summary::before { transform: rotate(90deg); }
+  .card-move {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+  }
+  .card-zone-select {
+    max-width: 132px;
+    padding: 4px 8px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--input-text);
+    font-size: 13px;
+    font-weight: 700;
+  }
 
   .capacity-section {
     background: var(--panel-bg);
@@ -864,6 +963,13 @@
   .empty-hint {
     color: var(--empty-text); font-style: italic; text-align: center;
     padding: 22px 0; font-size: 15px;
+  }
+  .empty-actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
   }
 
   .modal-bg {
@@ -1000,6 +1106,15 @@
   }
   .advanced-row .adv-hint {
     color: var(--warn); font-size: 13px; font-weight: 600;
+  }
+  .capacity-explain {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--header-label);
+    line-height: 1.45;
+    margin-top: -4px;
   }
 
   /* ===== 自动结论 / 缺口总结 + 完成日反推 ===== */
@@ -1163,6 +1278,22 @@
   }
   @media (max-width: 720px) {
     .period-bars { grid-template-columns: 1fr; }
+    .card-foot {
+      align-items: stretch;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .card-move {
+      margin-left: 0;
+      width: 100%;
+    }
+    .card-zone-select {
+      max-width: none;
+      width: 100%;
+    }
+    .card[draggable="true"] {
+      cursor: default;
+    }
   }
   .period-bars .bar-row-mini {
     display: grid; grid-template-columns: 56px 1fr; align-items: center;
@@ -1576,6 +1707,7 @@
 <body>
 
 <div id="demoNarration" role="status" aria-live="polite"></div>
+<div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
 
 <header class="top">
   <div class="header-top-row">
@@ -1585,8 +1717,11 @@
       <button class="btn small ghost" id="importBtn" title="从 JSON 文件导入数据">📥 导入</button>
       <input type="file" id="importFile" accept=".json,application/json" hidden>
       <button class="btn small ghost" id="resetBtn" title="清空存档并恢复内置默认数据">🗑 重置</button>
+      <button class="btn small ghost" id="backupBtn" title="手动生成一份本地备份，便于误操作后恢复">💾 备份</button>
+      <button class="btn small ghost" id="restoreBackupBtn" title="恢复最近一次本地备份">↩ 恢复</button>
       <button class="btn small ghost" id="printBtn" title="打印或另存为 PDF 当前多期排期">🖨 打印/导出排期</button>
       <button class="btn small" id="demoBtn" title='自动演示「全塞爆 → 分期排开 → 完工日」（演示结束可恢复当前数据）'>▶ 一键演示</button>
+      <span class="save-status" id="saveStatus">未保存</span>
       <div class="theme-switch">
         <label for="themeSelect">主题</label>
         <select id="themeSelect" aria-label="主题切换">
@@ -1601,13 +1736,13 @@
     </div>
   </div>
   <div class="team-grid">
-    <div><label>产品（人）</label><input type="number" id="r_pm" min="0" step="1" value="2"></div>
-    <div><label>后端（人）</label><input type="number" id="r_be" min="0" step="1" value="2"></div>
-    <div><label>前端（人）</label><input type="number" id="r_fe" min="0" step="1" value="1"></div>
-    <div><label>全栈（人）</label><input type="number" id="r_fs" min="0" step="1" value="1"></div>
-    <div><label>测试（人）</label><input type="number" id="r_qa" min="0" step="1" value="1"></div>
-    <div><label>开始日期</label><input type="date" id="r_start"></div>
-    <div><label>结束日期</label><input type="date" id="r_end"></div>
+    <div><label for="r_pm">产品（人）</label><input type="number" id="r_pm" min="0" step="1" value="2"></div>
+    <div><label for="r_be">后端（人）</label><input type="number" id="r_be" min="0" step="1" value="2"></div>
+    <div><label for="r_fe">前端（人）</label><input type="number" id="r_fe" min="0" step="1" value="1"></div>
+    <div><label for="r_fs">全栈（人）</label><input type="number" id="r_fs" min="0" step="1" value="1"></div>
+    <div><label for="r_qa">测试（人）</label><input type="number" id="r_qa" min="0" step="1" value="1"></div>
+    <div><label for="r_start">开始日期</label><input type="date" id="r_start"></div>
+    <div><label for="r_end">结束日期</label><input type="date" id="r_end"></div>
     <details class="advanced-details" id="advancedDetails">
       <summary>⚙️ 高级设置（每日工时 / 节假日 / 风险预留 / 新人爬坡）</summary>
       <div class="advanced-body">
@@ -1648,6 +1783,7 @@
       </div>
     </details>
     <div style="grid-column: 1 / -1; text-align: center; font-size: 17px; font-weight: 600; color: var(--text-strong);" id="workdaysDisplay"></div>
+    <div class="capacity-explain" id="capacityExplain"></div>
   </div>
 </header>
 
@@ -1704,17 +1840,17 @@
 <div class="modal-bg" id="modal">
   <div class="modal">
     <h3 id="modalTitle">新增需求</h3>
-    <div class="field"><label>需求名称</label><input id="m_name" type="text" placeholder="例如：合同审批流"></div>
+    <div class="field"><label for="m_name">需求名称</label><input id="m_name" type="text" placeholder="例如：合同审批流"></div>
     <div class="field"><label>优先级 / 复杂度</label>
       <div class="pri-cpx-grid">
-        <div><label style="font-size:13px;">优先级</label>
+        <div><label for="m_priority" style="font-size:13px;">优先级</label>
           <select id="m_priority">
             <option value="3">高</option>
             <option value="2" selected>中</option>
             <option value="1">低</option>
           </select>
         </div>
-        <div><label style="font-size:13px;">复杂度</label>
+        <div><label for="m_complexity" style="font-size:13px;">复杂度</label>
           <select id="m_complexity">
             <option value="3">高</option>
             <option value="2" selected>中</option>
@@ -1725,10 +1861,10 @@
     </div>
     <div class="field"><label>各角色人天</label>
       <div class="role-grid">
-        <div><label>产品</label><input id="m_pm" type="number" min="0" step="0.5" value="1"></div>
-        <div><label>前端</label><input id="m_fe" type="number" min="0" step="0.5" value="2"></div>
-        <div><label>后端</label><input id="m_be" type="number" min="0" step="0.5" value="2"></div>
-        <div><label>测试</label><input id="m_qa" type="number" min="0" step="0.5" value="1"></div>
+        <div><label for="m_pm">产品</label><input id="m_pm" type="number" min="0" step="0.5" value="1"></div>
+        <div><label for="m_fe">前端</label><input id="m_fe" type="number" min="0" step="0.5" value="2"></div>
+        <div><label for="m_be">后端</label><input id="m_be" type="number" min="0" step="0.5" value="2"></div>
+        <div><label for="m_qa">测试</label><input id="m_qa" type="number" min="0" step="0.5" value="1"></div>
       </div>
     </div>
     <div class="field">
@@ -1755,7 +1891,10 @@
 
   // localStorage key for data (theme uses cp_theme, kept separate)
   const LS_KEY = "cp_data";
+  const LS_BACKUPS_KEY = "cp_backups";
+  const LS_LAST_SAVED_KEY = "cp_last_saved_at";
   const DATA_VERSION = 1;
+  const BACKUP_LIMIT = 5;
 
   // 中国法定节假日（放假日，调休上班日不处理）。覆盖 2025-2026。
   const CN_HOLIDAYS = [
@@ -2032,6 +2171,60 @@
     return Number.isInteger(n) ? String(n) : (Math.round(n * 10) / 10).toString();
   }
 
+  function pad2(n) { return n < 10 ? "0" + n : "" + n; }
+
+  function formatClock(d) {
+    if (!(d instanceof Date) || isNaN(d.getTime())) return "";
+    return pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+  }
+
+  function formatDateTime(d) {
+    if (!(d instanceof Date) || isNaN(d.getTime())) return "";
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) +
+      " " + formatClock(d);
+  }
+
+  function updateSaveStatus(message, warning) {
+    const el = $("saveStatus");
+    if (!el) return;
+    el.textContent = message || "已自动保存";
+    el.classList.toggle("is-warning", !!warning);
+  }
+
+  function showToast(message, actions, timeout) {
+    const stack = $("toastStack");
+    if (!stack) return;
+    const toast = document.createElement("div");
+    toast.className = "toast";
+    const msg = document.createElement("div");
+    msg.className = "toast-msg";
+    msg.textContent = message;
+    toast.appendChild(msg);
+    const actionWrap = document.createElement("div");
+    actionWrap.className = "toast-actions";
+    (actions || []).forEach(action => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = action.primary ? "btn small" : "btn small ghost";
+      btn.textContent = action.label;
+      btn.addEventListener("click", () => {
+        try { action.onClick && action.onClick(); } finally { toast.remove(); }
+      });
+      actionWrap.appendChild(btn);
+    });
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "btn small linkish";
+    closeBtn.textContent = "关闭";
+    closeBtn.addEventListener("click", () => toast.remove());
+    actionWrap.appendChild(closeBtn);
+    toast.appendChild(actionWrap);
+    stack.appendChild(toast);
+    if (timeout !== 0) {
+      setTimeout(() => { if (toast.isConnected) toast.remove(); }, timeout || 6000);
+    }
+  }
+
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, m => ({
       "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
@@ -2063,6 +2256,15 @@
   function depNamesForLabel(c) {
     if (!c || !Array.isArray(c.deps) || c.deps.length === 0) return [];
     return c.deps.map(id => cardById(id)).filter(Boolean).map(d => d.name);
+  }
+
+  function zoneSelectOptions(currentZone) {
+    let html = `<option value="pool"${currentZone === "pool" ? " selected" : ""}>需求池</option>`;
+    for (let i = 1; i <= periodsCount; i++) {
+      const zone = periodZone(i);
+      html += `<option value="${zone}"${currentZone === zone ? " selected" : ""}>第${i}期</option>`;
+    }
+    return html;
   }
 
   // inPeriodIdx: 0 表示在需求池；>=1 表示在第 K 期
@@ -2104,17 +2306,25 @@
           <span class="badge cpx-${c.complexity}">复杂度·${cpxLbl}</span>
           <span class="badge sum">合计 ${fmt(sum)} 人天</span>
         </div>
-        <div class="card-roles">
-          <div>产品<b>${fmt(c.pm)}</b></div>
-          <div>前端<b>${fmt(c.fe)}</b></div>
-          <div>后端<b>${fmt(c.be)}</b></div>
-          <div>测试<b>${fmt(c.qa)}</b></div>
-        </div>
-        ${depInfoHtml}
-        ${conflictMsgHtml}
+        <details class="card-more">
+          <summary>查看人天与依赖</summary>
+          <div class="card-roles">
+            <div>产品<b>${fmt(c.pm)}</b></div>
+            <div>前端<b>${fmt(c.fe)}</b></div>
+            <div>后端<b>${fmt(c.be)}</b></div>
+            <div>测试<b>${fmt(c.qa)}</b></div>
+          </div>
+          ${depInfoHtml}
+          ${conflictMsgHtml}
+        </details>
         <div class="card-foot">
           <div class="card-sum">合计 ${fmt(sum)} 人天</div>
-          <button class="btn small" data-act="${actName}" data-id="${c.id}">${actLabel}</button>
+          <div class="card-move">
+            <select class="card-zone-select" data-id="${c.id}" aria-label="移动「${escapeHtml(c.name)}」到指定期">
+              ${zoneSelectOptions(c.zone)}
+            </select>
+            <button class="btn small" data-act="${actName}" data-id="${c.id}">${actLabel}</button>
+          </div>
         </div>
       </div>`;
   }
@@ -2143,7 +2353,15 @@
     const filtered = filterCards(all, viewState.pool.q);
     const shown = sortCards(filtered, viewState.pool.sort);
     if (all.length === 0) {
-      poolList.innerHTML = '<div class="empty-hint">需求池空了，点右上角"+ 新增需求"添加。</div>';
+      poolList.innerHTML = `
+        <div class="empty-hint">
+          需求池空了，可以继续新增需求、导入排期，或用一键演示快速看效果。
+          <div class="empty-actions">
+            <button class="btn small" data-act="emptyAdd">+ 新增需求</button>
+            <button class="btn small ghost" data-act="emptyImport">📥 导入排期</button>
+            <button class="btn small ghost" data-act="emptyDemo">▶ 一键演示</button>
+          </div>
+        </div>`;
     } else if (shown.length === 0) {
       poolList.innerHTML = '<div class="empty-hint">没有匹配的需求，清空搜索框可恢复显示。</div>';
     } else {
@@ -2301,6 +2519,29 @@
       return `第${info.index}期 ${info.start}→${info.end}（${info.days}天）`;
     }).join(" ｜ ");
 
+    const roleGaps = [];
+    const roleLoads = {};
+    ROLES.forEach(r => { roleLoads[r.key] = 0; });
+    for (let i = 1; i <= periodsCount; i++) {
+      const info = periodInfos[i - 1] || { days: 0 };
+      const cap = capacity(Object.assign({}, team, { days: info.days || 0 }), factor);
+      const used = usedInZone(periodZone(i));
+      ROLES.forEach(r => {
+        roleLoads[r.key] += used[r.key];
+        const gap = used[r.key] - cap[r.key];
+        if (gap > 0.001) {
+          roleGaps.push({ period: i, role: r.name, key: r.key, gap });
+        }
+      });
+    }
+    roleGaps.sort((a, b) => b.gap - a.gap);
+    const biggestPoolCard = cards
+      .filter(c => c.zone === "pool")
+      .sort((a, b) => cardSum(b) - cardSum(a))[0];
+    const biggestOverflowCard = roleGaps.length > 0
+      ? cards.filter(c => c.zone === periodZone(roleGaps[0].period)).sort((a, b) => cardSum(b) - cardSum(a))[0]
+      : null;
+
     // ===== 决策化文案：缺口 Z 人天 → X 周 / 加 Y 人 / 砍需求 =====
     // 缺口 = 已分配但超容量(overflowPD) + 仍在池中未分配卡的人天合计
     const poolPD = cards.filter(c => c.zone === "pool").reduce((s, c) => s + cardSum(c), 0);
@@ -2319,6 +2560,15 @@
       decisionLine =
         `<span class="line decision">💡 要补上 ≈ <span class="gap-num">${gapDisp}</span> 人天 ${reason}` +
         `<br>👉 大约再 <b>${extraWeeks}</b> 周加班 <span class="sep">·</span> 或加 <b>${extraPeople}</b> 人 <span class="sep">·</span> 或 <b>砍掉部分需求</b></span>`;
+      if (roleGaps.length > 0) {
+        const top = roleGaps[0];
+        const moveTarget = biggestOverflowCard ? `，优先考虑后移「${escapeHtml(biggestOverflowCard.name)}」` : "";
+        decisionLine +=
+          `<span class="line decision">🎯 当前瓶颈：第${top.period}期 <b>${top.role}</b> 超出 <b>${fmt(Math.round(top.gap * 10) / 10)}</b> 人天${moveTarget}</span>`;
+      } else if (biggestPoolCard) {
+        decisionLine +=
+          `<span class="line decision">🎯 当前主要缺口来自需求池，最大未分配需求是「${escapeHtml(biggestPoolCard.name)}」（${fmt(cardSum(biggestPoolCard))} 人天）</span>`;
+      }
     }
 
     const overall = (inPool === 0 && (!overflowPeriods || overflowPeriods.length === 0) && !hasDepConflict);
@@ -2368,6 +2618,18 @@
       const extra = team.deducted > 0 ? `，已扣除 ${team.deducted} 天节假日` : "";
       workdaysDisplay.textContent = `📅 第1期共 ${team.days} 个工作日（已排除周末${extra}）；后续各期自动按相同工作日数顺排。`;
       workdaysDisplay.style.color = "var(--text-strong)";
+    }
+
+    const capExplain = $("capacityExplain");
+    if (capExplain) {
+      const cap = capacity(team, factor);
+      const bufferText = settings.buffer > 0 ? `，风险预留 ${settings.buffer}%` : "，无风险预留";
+      const rampText = (settings.rampOn && settings.newcomers > 0)
+        ? `，${settings.newcomers} 位新人按 ${Math.round(RAMP_FACTOR * 100)}% 折算`
+        : "";
+      capExplain.textContent =
+        `当前产能口径：${team.pm} 产品 + ${team.fe} 前端 + ${team.be} 后端 + ${team.fs} 全栈 + ${team.qa} 测试，` +
+        `${team.days} 个工作日${bufferText}${rampText}；折算容量：产品 ${fmt(cap.pm)}、前端 ${fmt(cap.fe)}、后端 ${fmt(cap.be)}、测试 ${fmt(cap.qa)} 人天。`;
     }
 
     const holidaySet = new Set();
@@ -2425,8 +2687,63 @@
     };
   }
 
+  function readBackups() {
+    try {
+      const raw = localStorage.getItem(LS_BACKUPS_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function writeBackups(arr) {
+    try { localStorage.setItem(LS_BACKUPS_KEY, JSON.stringify(arr.slice(0, BACKUP_LIMIT))); } catch (_) {}
+  }
+
+  function makeBackup(reason) {
+    try {
+      const backups = readBackups();
+      backups.unshift({
+        reason: reason || "手动备份",
+        createdAt: new Date().toISOString(),
+        data: serialize()
+      });
+      writeBackups(backups);
+      return backups[0];
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function restoreLatestBackup() {
+    const backups = readBackups();
+    const latest = backups[0];
+    if (!latest || !latest.data) {
+      showToast("当前没有可恢复的本地备份。");
+      return;
+    }
+    if (!confirm(`确认恢复最近备份吗？\n备份时间：${formatDateTime(new Date(latest.createdAt))}\n原因：${latest.reason || "未标注"}`)) return;
+    try {
+      makeBackup("恢复备份前自动备份");
+      applyData(latest.data);
+      renderAll();
+      save();
+      showToast("已恢复最近备份。");
+    } catch (e) {
+      alert("恢复失败：" + (e && e.message ? e.message : "未知错误"));
+    }
+  }
+
   function save() {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(serialize())); } catch (_) {}
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(serialize()));
+      const now = new Date();
+      localStorage.setItem(LS_LAST_SAVED_KEY, now.toISOString());
+      updateSaveStatus("已自动保存 · " + formatClock(now));
+    } catch (_) {
+      updateSaveStatus("保存失败，请导出备份", true);
+    }
   }
 
   function setTeamInputs(t) {
@@ -2550,7 +2867,7 @@
       const stamp = d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + "-" +
                     pad(d.getHours()) + pad(d.getMinutes());
       a.href = url;
-      a.download = "排兵布阵图-" + stamp + ".json";
+      a.download = "排兵布阵图-v" + DATA_VERSION + "-" + stamp + ".json";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -2566,9 +2883,16 @@
     reader.onload = function() {
       try {
         const obj = JSON.parse(String(reader.result || ""));
+        const count = Array.isArray(obj.cards) ? obj.cards.length : 0;
+        const pc = obj.periodsCount || DEFAULT_PERIODS;
+        if (!confirm(`确认导入这份排期吗？\n需求数：${count}\n期数：${pc}\n导入前会自动备份当前数据。`)) return;
+        makeBackup("导入前自动备份");
         applyData(obj);
         renderAll();
         save();
+        showToast(`已导入 ${count} 个需求，导入前数据已备份。`, [
+          { label: "恢复备份", onClick: restoreLatestBackup }
+        ]);
       } catch (e) {
         alert("导入失败：文件不是有效的 JSON 或数据结构异常。\n" + (e && e.message ? e.message : ""));
       }
@@ -2578,7 +2902,8 @@
   }
 
   function resetAll() {
-    if (!confirm("确认要清空所有存档并恢复内置默认数据吗？此操作不可撤销。")) return;
+    if (!confirm("确认要清空所有存档并恢复内置默认数据吗？\n重置前会自动备份当前数据，可从提示里恢复。")) return;
+    makeBackup("重置前自动备份");
     try { localStorage.removeItem(LS_KEY); } catch (_) {}
     viewState.pool.sort = "pri"; viewState.pool.q = "";
     poolSortEl.value = "pri";
@@ -2595,6 +2920,10 @@
     $("r_newcomers").value = 0;
     loadDefaultCards();
     renderAll();
+    save();
+    showToast("已恢复内置默认数据，重置前数据已备份。", [
+      { label: "恢复备份", onClick: restoreLatestBackup }
+    ]);
   }
 
   function moveCard(id, zone) {
@@ -2605,18 +2934,36 @@
   function delCard(id) {
     const c = cards.find(x => x.id === id);
     if (!c) return;
-    if (confirm(`确定删除「${c.name}」？`)) {
-      const i = cards.indexOf(c);
-      cards.splice(i, 1);
-      // 同时清理其它卡的 deps 中对该 id 的引用，避免悬空依赖
-      cards.forEach(other => {
-        if (Array.isArray(other.deps) && other.deps.length > 0) {
-          other.deps = other.deps.filter(d => d !== id);
+    const i = cards.indexOf(c);
+    const removed = JSON.parse(JSON.stringify(c));
+    const affectedDeps = cards
+      .filter(other => Array.isArray(other.deps) && other.deps.includes(id))
+      .map(other => ({ id: other.id, deps: other.deps.slice() }));
+    cards.splice(i, 1);
+    // 同时清理其它卡的 deps 中对该 id 的引用，避免悬空依赖
+    cards.forEach(other => {
+      if (Array.isArray(other.deps) && other.deps.length > 0) {
+        other.deps = other.deps.filter(d => d !== id);
+      }
+    });
+    renderAll();
+    save();
+    showToast(`已删除「${c.name}」。`, [
+      {
+        label: "撤销",
+        primary: true,
+        onClick: () => {
+          cards.splice(Math.min(i, cards.length), 0, removed);
+          affectedDeps.forEach(item => {
+            const target = cards.find(x => x.id === item.id);
+            if (target) target.deps = item.deps.slice();
+          });
+          renderAll();
+          save();
+          showToast("已撤销删除。");
         }
-      });
-      renderAll();
-      save();
-    }
+      }
+    ], 8000);
   }
 
   let editingId = null;
@@ -2721,6 +3068,9 @@
   }
 
   function onListClick(e) {
+    if (e.target.closest(".card-more") || e.target.closest(".card-zone-select")) {
+      return;
+    }
     const btn = e.target.closest("button[data-act]");
     if (btn) {
       e.stopPropagation();
@@ -2728,7 +3078,10 @@
       const id = btn.getAttribute("data-id");
       const pAttr = btn.getAttribute("data-period");
       const p = pAttr ? parseInt(pAttr, 10) : 0;
-      if (act === "add") moveCard(id, periodZone(currentPeriod));
+      if (act === "emptyAdd") openModal(null);
+      else if (act === "emptyImport") $("importFile").click();
+      else if (act === "emptyDemo") $("demoBtn").click();
+      else if (act === "add") moveCard(id, periodZone(currentPeriod));
       else if (act === "back") moveCard(id, "pool");
       else if (act === "del") delCard(id);
       else if (act === "edit") {
@@ -2753,6 +3106,17 @@
   }
   poolList.addEventListener("click", onListClick);
   periodsContainer.addEventListener("click", onListClick);
+
+  function onListChange(e) {
+    const sel = e.target.closest(".card-zone-select");
+    if (!sel) return;
+    const id = sel.getAttribute("data-id");
+    const zone = sel.value;
+    if (!id || !zone) return;
+    moveCard(id, zone);
+  }
+  poolList.addEventListener("change", onListChange);
+  periodsContainer.addEventListener("change", onListChange);
 
   let dragId = null;
   let isDragging = false;
@@ -2905,6 +3269,17 @@
     e.target.value = "";
   });
   $("resetBtn").addEventListener("click", resetAll);
+  $("backupBtn").addEventListener("click", () => {
+    const backup = makeBackup("手动备份");
+    if (backup) {
+      showToast("已生成本地备份：" + formatDateTime(new Date(backup.createdAt)), [
+        { label: "恢复最近备份", onClick: restoreLatestBackup }
+      ]);
+    } else {
+      showToast("备份失败，请先导出 JSON 文件。");
+    }
+  });
+  $("restoreBackupBtn").addEventListener("click", restoreLatestBackup);
 
   // 打印/导出排期：用浏览器原生 window.print()，搭配 @media print 隐藏控件
   $("printBtn").addEventListener("click", () => {
@@ -3232,6 +3607,14 @@
   const restored = loadFromStorage();
   if (!restored) {
     loadDefaultCards();
+    save();
+  } else {
+    try {
+      const savedAt = localStorage.getItem(LS_LAST_SAVED_KEY);
+      updateSaveStatus(savedAt ? "已自动保存 · " + formatClock(new Date(savedAt)) : "已加载本地存档");
+    } catch (_) {
+      updateSaveStatus("已加载本地存档");
+    }
   }
   renderAll();
 })();
