@@ -574,15 +574,17 @@
   .theme-switch {
     display: flex; align-items: center; gap: 8px;
     font-size: 14px; color: var(--header-label);
-    min-width: 0;
+    flex-shrink: 0;
+  }
+  .theme-switch label {
+    white-space: nowrap;
   }
   .theme-switch select {
     font-size: 15px; font-weight: 600;
     padding: 7px 12px; border-radius: var(--radius-pill);
     background: var(--input-bg); color: var(--input-text);
     border: 1.5px solid var(--input-border);
-    cursor: pointer; min-width: 140px;
-    max-width: 100%;
+    cursor: pointer; min-width: 135px;
   }
   .theme-switch select:focus { outline: none; border-color: var(--input-focus); }
 
