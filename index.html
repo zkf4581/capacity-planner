@@ -1336,6 +1336,10 @@
 
   /* ===== 迭代7：打印专用 ===== */
   @media print {
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
     html, body {
       background: #ffffff !important;
       background-image: none !important;
@@ -1393,38 +1397,92 @@
     .periods-col { display: block !important; }
     .period-panel { margin-bottom: 12px; page-break-inside: avoid; }
     .card { page-break-inside: avoid; }
-    /* 总结 / 三态条 黑白可读 */
+    /* 打印保持白底省墨，但保留关键语义色：正常 / 预警 / 超额 / 依赖冲突 */
     .cap-conclusion, .cap-conclusion.surplus, .cap-conclusion.deficit, .cap-conclusion.empty {
       background: #ffffff !important; color: #000 !important;
       border: 1.5px solid #000 !important;
     }
     .cap-conclusion b, .cap-conclusion .eta-date, .cap-conclusion .note { color: #000 !important; }
-    .summary-chip, .summary-chip.ok, .summary-chip.warn, .summary-chip.dep-warn {
-      background: #f3f3f3 !important; color: #000 !important;
-      border-color: #666 !important;
+    .summary-chip {
+      background: #eef2ff !important;
+      color: #1e3a8a !important;
+      border-color: #93c5fd !important;
+    }
+    .summary-chip.ok {
+      background: #dcfce7 !important;
+      color: #166534 !important;
+      border-color: #22c55e !important;
+    }
+    .summary-chip.warn,
+    .summary-chip.dep-warn {
+      background: #fee2e2 !important;
+      color: #991b1b !important;
+      border-color: #ef4444 !important;
     }
     .summary-chip b { color: #000 !important; }
     .bar-track { background: #eee !important; border: 1px solid #888 !important; }
-    .bar-fill.ok   { background: #d0d0d0 !important; box-shadow: none !important; }
-    .bar-fill.warn { background: #8a8a8a !important; box-shadow: none !important; }
-    .bar-fill.over { background: #000000 !important; box-shadow: none !important; }
+    .bar-fill.ok   { background: #22c55e !important; box-shadow: none !important; }
+    .bar-fill.warn { background: #f59e0b !important; box-shadow: none !important; }
+    .bar-fill.over { background: #ef4444 !important; box-shadow: none !important; }
     .bar-label { color: #000 !important; text-shadow: none !important; }
-    .period-warning { display: inline-flex !important; background: #fff !important; color: #000 !important; border: 1.5px solid #000 !important; }
-    .badge { background: #f3f3f3 !important; color: #000 !important; border-color: #666 !important; }
-    .badge.pri-3, .badge.cpx-3 { background: #e0e0e0 !important; border-color: #000 !important; font-weight: 800 !important; }
+    .period-warning {
+      display: inline-flex !important;
+      background: #fee2e2 !important;
+      color: #991b1b !important;
+      border: 1.5px solid #ef4444 !important;
+    }
+    .badge {
+      background: #eef2ff !important;
+      color: #1e3a8a !important;
+      border-color: #93c5fd !important;
+    }
+    .badge.pri-3 {
+      background: #fee2e2 !important;
+      color: #991b1b !important;
+      border-color: #ef4444 !important;
+      font-weight: 800 !important;
+    }
+    .badge.pri-2,
+    .badge.cpx-2 {
+      background: #fef3c7 !important;
+      color: #92400e !important;
+      border-color: #f59e0b !important;
+    }
+    .badge.pri-1,
+    .badge.cpx-1 {
+      background: #f1f5f9 !important;
+      color: #475569 !important;
+      border-color: #cbd5e1 !important;
+    }
+    .badge.cpx-3 {
+      background: #ffedd5 !important;
+      color: #9a3412 !important;
+      border-color: #f97316 !important;
+      font-weight: 800 !important;
+    }
+    .badge.sum {
+      background: #dbeafe !important;
+      color: #1d4ed8 !important;
+      border-color: #60a5fa !important;
+    }
     .card { background: #fff !important; color: #000 !important; border: 1.5px solid #666 !important; }
-    .card.complex { background: #fafafa !important; border-color: #000 !important; }
-    .card.dep-conflict { border: 2px solid #000 !important; box-shadow: none !important; }
+    .card.complex { background: #fff7ed !important; border-color: #f97316 !important; }
+    .card.dep-conflict { border: 2px solid #ef4444 !important; box-shadow: none !important; }
     .card-title, .card-roles div b, .card-sum, .pill-strong { color: #000 !important; }
     .card-roles div { background: #f3f3f3 !important; color: #000 !important; }
     .dep-info, .dep-info .dep-tag, .dep-info .dep-label { color: #000 !important; }
-    .dep-info .dep-tag { background: #f3f3f3 !important; border-color: #666 !important; }
+    .dep-info .dep-tag { background: #fff7ed !important; border-color: #f97316 !important; }
     .dep-conflict-msg {
-      background: #fff !important; color: #000 !important;
-      border: 1.5px solid #000 !important;
+      background: #fee2e2 !important; color: #991b1b !important;
+      border: 1.5px solid #ef4444 !important;
     }
-    .warning { background: #fff !important; color: #000 !important; border: 1.5px solid #000 !important; animation: none !important; }
-    .period-panel.is-current { border-left: 4px solid #000 !important; }
+    .warning {
+      background: #fee2e2 !important;
+      color: #991b1b !important;
+      border: 1.5px solid #ef4444 !important;
+      animation: none !important;
+    }
+    .period-panel.is-current { border-left: 4px solid #2563eb !important; }
     @page { margin: 12mm; }
   }
 
@@ -1507,10 +1565,10 @@
 <script>
   (function(){
     try {
-      var t = localStorage.getItem("cp_theme") || "midnight";
+      var t = localStorage.getItem("cp_theme") || "glass";
       document.documentElement.setAttribute("data-theme", t);
     } catch(_) {
-      document.documentElement.setAttribute("data-theme", "midnight");
+      document.documentElement.setAttribute("data-theme", "glass");
     }
   })();
 </script>
@@ -2855,7 +2913,7 @@
 
   const themeSelect = $("themeSelect");
   if (themeSelect) {
-    const current = document.documentElement.getAttribute("data-theme") || "midnight";
+    const current = document.documentElement.getAttribute("data-theme") || "glass";
     themeSelect.value = current;
     themeSelect.addEventListener("change", () => {
       const v = themeSelect.value;
